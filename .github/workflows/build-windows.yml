@@ -18,14 +18,30 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: pip install flask pikepdf Pillow pyinstaller
+
+      - name: Install Ghostscript (via Chocolatey)
+        run: |
+          choco install ghostscript --no-progress -y --version=10.07.1
+          Write-Host "Ghostscript installed"
+
+      - name: Copy Ghostscript binaries for bundling
+        run: |
+          $gsPath = Get-ChildItem -Path "C:\Program Files\gs" -Directory | Sort-Object Name -Descending | Select-Object -First 1
+          Write-Host "Found Ghostscript at: $($gsPath.FullName)"
+          New-Item -ItemType Directory -Force -Path gs_bundle | Out-Null
+          Copy-Item "$($gsPath.FullName)\bin\gswin64c.exe" gs_bundle\
+          Copy-Item "$($gsPath.FullName)\bin\gsdll64.dll" gs_bundle\
+          Write-Host "Copied to gs_bundle"
+          & ".\gs_bundle\gswin64c.exe" --version
 
       - name: Build with PyInstaller
         run: |
           pyinstaller --onedir --name "PDF-Compress" `
             --add-data "templates;templates" `
             --add-data "static;static" `
+            --add-binary "gs_bundle\*;gs" `
             --collect-all pikepdf `
             --hidden-import pikepdf `
             --hidden-import PIL._imaging `
