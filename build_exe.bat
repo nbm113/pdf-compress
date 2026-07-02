@@ -153,7 +153,6 @@ echo chcp 65001 ^>nul
 echo title PDF Compress
 echo echo 启动中...
 echo echo.
-echo start http://127.0.0.1:5050
 echo start "" "%%~dp0PDF-Compress.exe"
 ) > "dist\PDF-Compress\启动.bat"
 

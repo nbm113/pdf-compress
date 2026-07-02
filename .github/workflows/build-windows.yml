@@ -54,7 +54,6 @@ jobs:
           chcp 65001 >nul
           title PDF Compress
           echo 启动中...
-          start http://127.0.0.1:5050
           start "" "%~dp0PDF-Compress.exe"
           "@ | Out-File -FilePath "dist\PDF-Compress\启动.bat" -Encoding Default
 
