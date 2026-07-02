@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+
+# Virtualenv
+venv/
+.venv/
+
+# Uploads (临时文件)
+uploads/*.pdf
+
+# IDE
+.vscode/
+.idea/
+
+# macOS
+.DS_Store
+
+# Env
+.env

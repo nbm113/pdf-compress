@@ -1,0 +1,72 @@
+name: Build Windows EXE
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Ghostscript
+        run: |
+          # Download Ghostscript AGPL release (portable)
+          $url = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10071/gs10071w64.exe"
+          Write-Host "Downloading Ghostscript..."
+          Invoke-WebRequest -Uri $url -OutFile gs_installer.exe
+
+          # Silent install
+          Write-Host "Installing Ghostscript..."
+          Start-Process -FilePath .\gs_installer.exe -ArgumentList "/S" -Wait -NoNewWindow
+
+          # Verify
+          & "C:\Program Files\gs\gs10.07.1\bin\gswin64c.exe" --version
+
+      - name: Copy Ghostscript binaries
+        run: |
+          New-Item -ItemType Directory -Force -Path gs_bundle
+          Copy-Item "C:\Program Files\gs\gs10.07.1\bin\gswin64c.exe" gs_bundle\
+          Copy-Item "C:\Program Files\gs\gs10.07.1\bin\gsdll64.dll" gs_bundle\
+          Write-Host "Ghostscript binaries copied"
+
+      - name: Install Python dependencies
+        run: pip install flask pikepdf Pillow pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller --onedir --name "PDF-Compress" `
+            --add-data "templates;templates" `
+            --add-data "static;static" `
+            --add-binary "gs_bundle\*;gs" `
+            --collect-all pikepdf `
+            --hidden-import pikepdf `
+            --hidden-import PIL._imaging `
+            --clean `
+            app.py
+
+      - name: Create launcher
+        run: |
+          @"
+          @echo off
+          chcp 65001 >nul
+          title PDF Compress
+          echo 启动中...
+          start http://127.0.0.1:5050
+          start "" "%~dp0PDF-Compress.exe"
+          "@ | Out-File -FilePath "dist\PDF-Compress\启动.bat" -Encoding Default
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PDF-Compress-Windows
+          path: dist\PDF-Compress\
+          retention-days: 7
