@@ -3,11 +3,12 @@ name: Build Windows EXE
 on:
   push:
     branches: [main]
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v4
@@ -17,28 +18,7 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install Ghostscript
-        run: |
-          # Download Ghostscript AGPL release (portable)
-          $url = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10071/gs10071w64.exe"
-          Write-Host "Downloading Ghostscript..."
-          Invoke-WebRequest -Uri $url -OutFile gs_installer.exe
-
-          # Silent install
-          Write-Host "Installing Ghostscript..."
-          Start-Process -FilePath .\gs_installer.exe -ArgumentList "/S" -Wait -NoNewWindow
-
-          # Verify
-          & "C:\Program Files\gs\gs10.07.1\bin\gswin64c.exe" --version
-
-      - name: Copy Ghostscript binaries
-        run: |
-          New-Item -ItemType Directory -Force -Path gs_bundle
-          Copy-Item "C:\Program Files\gs\gs10.07.1\bin\gswin64c.exe" gs_bundle\
-          Copy-Item "C:\Program Files\gs\gs10.07.1\bin\gsdll64.dll" gs_bundle\
-          Write-Host "Ghostscript binaries copied"
-
-      - name: Install Python dependencies
+      - name: Install dependencies
         run: pip install flask pikepdf Pillow pyinstaller
 
       - name: Build with PyInstaller
@@ -46,11 +26,9 @@ jobs:
           pyinstaller --onedir --name "PDF-Compress" `
             --add-data "templates;templates" `
             --add-data "static;static" `
-            --add-binary "gs_bundle\*;gs" `
             --collect-all pikepdf `
             --hidden-import pikepdf `
             --hidden-import PIL._imaging `
-            --clean `
             app.py
 
       - name: Create launcher

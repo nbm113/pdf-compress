@@ -3,7 +3,11 @@
     "allow": [
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://127.0.0.1:5050/)",
       "Bash(open http://127.0.0.1:5050)",
-      "Bash(git --version)"
+      "Bash(git --version)",
+      "Bash(gh auth *)",
+      "Bash(gh repo *)",
+      "Bash(gh api *)",
+      "Bash(gh run *)"
     ]
   }
 }
